@@ -13,14 +13,14 @@ contract Splitwise{
           ret = debts[debtor][creditor];
       }
       function add_IOU(address creditor, int32 amount) public{
-          addDebt(creditor, msg.sender, amount);
+          addDebt(msg.sender, creditor, amount);
       }
-      function addDebt(address creditor, address debtor, int32 amount) public{
+      function addDebt(address debtor, address creditor , int32 amount) public{
           debts[debtor][creditor] += amount;
           addToUsers(creditor);
           addToUsers(debtor);
       }
-      function addToUsers(address add)private{
+      function addToUsers(address add) private{
           for (uint i = 0; i < users.length; i++){
             if (users[i] == add)
                 return;

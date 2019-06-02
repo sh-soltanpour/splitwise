@@ -118,11 +118,11 @@ var abi = [
 		"constant": false,
 		"inputs": [
 			{
-				"name": "creditor",
+				"name": "debtor",
 				"type": "address"
 			},
 			{
-				"name": "debtor",
+				"name": "creditor",
 				"type": "address"
 			},
 			{
@@ -146,7 +146,7 @@ abiDecoder.addABI(abi);
 var BlockchainSplitwiseContractSpec = web3.eth.contract(abi);
 
 // This is the address of the contract you want to connect to; copy this from Remix
-var contractAddress = '0x5f8e26facc23fa4cbd87b8d9dbbd33d5047abde1' // FIXME: fill this in with your contract's address/hash
+var contractAddress = '0x9561C133DD8580860B6b7E504bC5Aa500f0f06a7' // FIXME: fill this in with your contract's address/hash
 
 var BlockchainSplitwise = BlockchainSplitwiseContractSpec.at(contractAddress)
 
@@ -164,7 +164,10 @@ var BlockchainSplitwise = BlockchainSplitwiseContractSpec.at(contractAddress)
 //   - a list of everyone currently owing or being owed money
 function getUsers() {
 	return BlockchainSplitwise.getUsers();
-	
+}
+
+function lookup(debtor, creditor) {
+	return BlockchainSplitwise.lookup(debtor, creditor).c[0];
 }
 
 // TODO: Get the total amount owed by the user specified by 'user'
@@ -172,7 +175,8 @@ function getTotalOwed(user) {
 	var owedAmount = 0;
 	var users = getUsers();
 	for (var i = 0; i < users.length; i++){
-		owedAmount += BlockchainSplitwise.lookup(user, users[i]);
+		// console.log(user, users[i], lookup(user, users[i]));
+		owedAmount += lookup(user, users[i]);
 	}
 	return owedAmount;
 }
@@ -200,26 +204,27 @@ function add_IOU(creditor, amount) {
 	if (path !== null){
 		min = amount;
 		for (var i = 0; i < path.length - 1; i++){
-			var amount = BlockchainSplitwise.lookup(path[i], path[i + 1])
-			if (amount < min)
-				min = amount;
+			var amount2 = lookup(path[i], path[i + 1])
+			if (amount2 < min)
+				min = amount2;
 		}
+		// console.log("minimum", min);
 		for(var i = 0; i < path.length - 1; i++){
 			BlockchainSplitwise.addDebt(path[i], path[i+1], -min)	
 		}
 		
 	}
-	BlockchainSplitwise.add_IOU(creditor, amount - min);
-	console.log("path", path)
+	BlockchainSplitwise.add_IOU(creditor, amount - min,{gas:300000});
+	// console.log("path", path)
 }
 
 function getNeighbors(user) {
 	var neighbors = [];
 	var users = getUsers();
 	for (var i = 0; i < users.length; i++)
-		if(BlockchainSplitwise.lookup(user, users[i]) > 0)
+		if(lookup(user, users[i]) > 0)
 			neighbors.push(users[i]);
-	console.log("user", user, neighbors)
+	// console.log("user", user, neighbors)
 	return neighbors;	
 }
 
@@ -301,7 +306,7 @@ $("#all_users").html(getUsers().map(function (u,i) { return "<li>"+u+"</li>" }))
 // It passes the values from the two inputs above
 $("#addiou").click(function() {
   add_IOU($("#creditor").val(), $("#amount").val());
-  // window.location.reload(true); // refreshes the page after
+  window.location.reload(true); // refreshes the page after
 });
 
 // This is a log function, provided if you want to display things to the page instead of the JavaScript console
